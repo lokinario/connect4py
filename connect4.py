@@ -34,13 +34,14 @@ def print_board(board: np.ndarray):
 
 # ai functions
 
-# returns list of different boards
+# returns list of columns to drop piece
 def possibleMoves(board: np.ndarray, piece: int) -> list:
     moves = list()
     for i in range(COLUMN_COUNT):
         if isLegal(board, i):
-            copy = board.copy()
-            moves.append(drop_piece(copy))
+            # copy = board.copy()
+            # moves.append(drop_piece(copy))
+            moves.append(i)
     return moves
 
 # winnging checks 
@@ -81,35 +82,49 @@ def is_terminal_node(board):
     return winCheck(board) > 0 or len(possibleMoves(board,AI)) == 0
 def heuristic(board, player_piece):
     return -1
-def abprune(board: np.ndarray, depth: int, alpha: int, beta: int, maximizingPlayer: int) -> int:
+def abprune(board: np.ndarray, depth: int, alpha: int, beta: int, maximizingPlayer: int) -> (int,int):
     valid_moves = possibleMoves(board,maximizingPlayer)
     is_terminal = is_terminal_node(board)
     if depth == 0 or is_terminal:
         if is_terminal:
             if winning_move(board,AI):
-                return 10000000000000
+                return (None,  10000000000000)
             elif winning_move(board,HUMAN):
-                return -10000000000000
+                return (None, -10000000000000)
             else: 
-                return 0
+                return (None, 0)
         else:
-            return heuristic(board, AI)
+            return (None, heuristic(board, AI))
     if maximizingPlayer == 1:
-        val = -9999
+        col = -1
+        val = -math.inf
         for i in possibleMoves(board, maximizingPlayer):
-            val = max(val, abprune(i,depth - 1, alpha, beta, 2))
+            copy = board.copy()
+            r = freeRow(board,i)
+            drop_piece(copy,r,i,maximizingPlayer)
+            newVal = abprune(copy,depth - 1, alpha, beta, 2)[1]
+            if newVal > val:
+                val = newVal 
+                col = i
             alpha = max(alpha, val)
             if alpha >= beta:
                 break
-        return val 
+        return col, val 
     else: 
-        val = 9999 
+        col = -1
+        val = math.inf 
         for i in possibleMoves(board, maximizingPlayer):
-            val = min(val, abprune(i, depth - 1, alpha, beta, 1))
+            copy = board.copy()
+            r = freeRow(board,i)
+            drop_piece(copy,r,i,maximizingPlayer)
+            newVal = abprune(copy,depth - 1, alpha, beta, 1)[1]
+            if newVal > val:
+                val = newVal 
+                col = i
             beta = min(beta, val)
             if alpha >= beta: 
                 break 
-        return val 
+        return col, val 
 
 
 
@@ -146,17 +161,25 @@ while 1:
                 print("illegal move\n")
         elif not game_over:
             # random for now
-            while 1:
-                move = random.randint(0,6)
-                if(move >= 0 and move <7 and isLegal(board,move)):
-                    r = freeRow(board,move)
-                    drop_piece(board,freeRow(board,move),move,AI)
-                    check = winCheck(board)
-                    if(check > 0):
-                        winner = AI
-                        game_over = True
-                    print("AI chooses {},{}\n".format(r,move))
-                    break 
+            # while 1:
+            #     move = random.randint(0,6)
+            #     if(move >= 0 and move <7 and isLegal(board,move)):
+            #         r = freeRow(board,move)
+            #         drop_piece(board,freeRow(board,move),move,AI)
+            #         check = winCheck(board)
+            #         if(check > 0):
+            #             winner = AI
+            #             game_over = True
+            #         print("AI chooses {},{}\n".format(r,move))
+            #         break 
+            
+            col, score = abprune(board, 5, -math.inf, math.inf,1)
+            if isLegal(board, col):
+                row = freeRow(board, col)
+                drop_piece(board, row, col, AI)
+                if winCheck(board):
+                    print("AI wins\n")
+                    game_over = True
 
         print_board(board)
         turn += 1
