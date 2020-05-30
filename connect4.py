@@ -80,8 +80,32 @@ def winCheck(board: np.ndarray)->int:
 
 def is_terminal_node(board):
     return winCheck(board) > 0 or len(possibleMoves(board,AI)) == 0
+
+# score of board
+def windowScore(window, player):
+    score = 0
+    opponent = HUMAN
+    if player == HUMAN:
+        opponent = AI 
+    
+    if window.count(player) == 4: 
+        score += 100
+    elif window.count(player) == 3 and window.count(0) == 1:
+        score += 5
+    elif window.count(player) == 2 and window.count(0) == 2:
+        score += 2 
+    if window.count(opponent) == 3 and window.count(0) == 1:
+        score -= 4
+
+    return score
+
 def heuristic(board, player_piece):
-    return -1
+    score = 0
+    for row in board:
+        score += windowScore(row)
+    return score
+
+
 def abprune(board: np.ndarray, depth: int, alpha: int, beta: int, maximizingPlayer: int) -> (int,int):
     valid_moves = possibleMoves(board,maximizingPlayer)
     is_terminal = is_terminal_node(board)
